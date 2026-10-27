@@ -25,3 +25,8 @@ def test_help_exits_zero(module):
         cwd=ROOT, capture_output=True, text=True,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_no_cli_module_skipped():
+    missing = [m for m in CLI_MODULES if not (SCRIPTS / "kcommon" / f"{m}.py").exists()]
+    assert missing == []
