@@ -2,3 +2,7 @@
 .agent-work/
 docs/superpowers/
 .DS_Store
+.superpowers/
+.venv/
+__pycache__/
+.pytest_cache/

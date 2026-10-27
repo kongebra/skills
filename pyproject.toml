@@ -1,0 +1,19 @@
+[project]
+name = "k-skills-dev"
+version = "0.0.0"
+description = "Dev project for the k- team skills. Not a package."
+requires-python = ">=3.11"
+dependencies = ["kcommon"]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+kcommon = { path = "skills/k-common", editable = true }
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
