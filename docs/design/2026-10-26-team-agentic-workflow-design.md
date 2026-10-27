@@ -246,11 +246,13 @@ The project repo controls the version of every skill that the workflow uses. **[
 This gives version control: every person on the project gets the same skills, and each change is a reviewed PR.
 
 - superpowers runs as a plugin, as its authors intend. **[Svein]**
-  The project settings enable the plugin and pin its version, where the coding agent supports this.
+  The project settings enable the plugin (`.claude/settings.json` and `.github/copilot/settings.json`).
   The plugin keeps its session-start hook, which a skills-only install does not include.
-  The team installs the plugin from the superpowers marketplace, not from the official Anthropic marketplace, because the official marketplace updates plugins automatically by default.
+  The team installs the plugin from the official marketplace, without a version pin. **[Svein]**
+  Reason: the workflow must keep working when the repo owner is away, and a pin needs a person to move it.
+  Each person installs the plugin once, because no coding agent installs a plugin without trust (plan 0, 2026-10-27).
 - In the repo, as committed files: `grilling`, `grill-with-docs`, and `domain-modeling` from mattpocock/skills, all `k-` skills, and the domain-specific skills of the project. **[Svein]**
-- In the repo: `skills-lock.json`, the plugin settings, the `AGENTS.md` work tracking section, and the guardrails that the project adopts.
+- In the repo: `skills-lock.json`, the plugin settings (enable only, no pin), the `AGENTS.md` work tracking section, and the guardrails that the project adopts.
 - At user level: only personal skills and personal instructions.
 - Never in the repo: specs, plans, the ledger, local settings files, credentials, and session logs.
 
@@ -265,8 +267,9 @@ Therefore nobody keeps a copy of a team workflow skill at user level. **[call]**
 `k-work` runs a preflight check before it starts. **[Svein]**
 It stops with a clear message when one of these checks fails:
 
-- superpowers is present, and its version is a last known good version (section 7.1).
-  A newer version can change the seams in section 5.7, so presence alone is not enough.
+- superpowers is present, and its version is not older than the last known good version (section 7.1). **[Svein]**
+  A newer version is a warning, not a stop, because nobody pins it. The PR then states "untested superpowers version". **[Svein]**
+  A newer version can change the seams in section 5.7, and the weekly contract checks (section 7.2) report this.
 - `grilling`, `grill-with-docs`, and `domain-modeling` are present.
 - No user-level skill has the same name as a skill in the repo.
 
@@ -279,7 +282,7 @@ The team considered three ways to build the repo.
 **A. A thin team layer over the upstream skills.**
 The team chose this approach. **[Svein]**
 The repo holds only the team skills, the role files, the templates, the harness snippets, and a list of tested upstream versions.
-Each project repo pins superpowers as a plugin in its settings, and commits the other skills as files (section 3.6). **[Svein]**
+Each project repo enables superpowers as a plugin from the official marketplace, and commits the other skills as files (section 3.6). **[Svein]**
 The team installs them with `npx skills add <source>#<sha>`, for example `mattpocock/skills#<sha> -s grilling -s domain-modeling`.
 The `<sha>` is the fixed commit, as a 40-character SHA.
 The command works from GitHub, Azure DevOps, and GitLab.
@@ -1044,7 +1047,15 @@ It is not a skill. **[Svein]**
 After approval 2, `k-run` drives every autonomous stage headless. **[Svein]**
 These stages are the build, finishing, `k-code-review`, and `k-pr`.
 
-`k-run` starts the coding agent for each stage.
+`k-run` creates the worktree and starts the coding agent with the worktree as its working folder. **[Svein]**
+`k-run` starts the coding agent for each stage with a narrow permission profile for that coding agent. **[Svein]**
+The profiles come from plan 0 (2026-10-27).
+In Claude Code, one profile gave zero denied tool calls.
+It allows file access in the worktree, `git`, `uv`, and the superpowers helper scripts, and it denies `git push`.
+In Copilot CLI, a shell rule matches only the command name, so the superpowers helper scripts need a broad rule.
+Therefore `k-run` runs these helper scripts itself where possible, and gives the agent the result. **[Svein]**
+The stage prompt tells the agent to use absolute paths, to run Python through `uv`, and not to chain `cd` with git commands.
+A deny rule for `git push` is not a boundary, because forms such as `git -C . push` are not matched. The remote-ref check stays the control.
 It reads the harness events and the final message of each stage.
 It uses the same per-agent adapters as the eval runner (section 7.3).
 
@@ -1077,7 +1088,9 @@ The file lists:
 - mattpocock/skills: commit
 - the `skills` CLI: version
 
-Each project repo pins the superpowers plugin version in its settings, and commits the other skill files and its `skills-lock.json` (section 3.6). **[Svein]**
+Each project repo enables the superpowers plugin from the official marketplace without a pin (section 3.6). **[Svein]**
+It commits the other skill files and its `skills-lock.json`.
+For superpowers, the last known good version is the tested version. `k-work` warns when a newer version is installed.
 A version bump is a PR in each project repo.
 
 ### 7.2 Contract checks (cheap, weekly)
@@ -1166,7 +1179,7 @@ The contract checks and evals stay the same, so B changes the packaging and not 
 1. The spike on 2026-10-27 tested the seams once (n=1) in Claude Code and Copilot CLI (section 5.7).
    The evals in section 7.3 repeat these checks on every skill change and every version bump.
    Verify the seams in the other coding agents.
-2. Verify that the team can pin superpowers to a version in Codex, OpenCode, Pi, Copilot CLI, and Hermes.
+2. Resolved 2026-10-27: the team does not pin superpowers (section 3.6).
    Claude Code and VS Code Copilot support pinning.
    Some coding agents update plugins automatically.
 3. Verify that the Copilot cloud agent supports subagents and user-level skills.
@@ -1204,11 +1217,12 @@ The contract checks and evals stay the same, so B changes the packaging and not 
     This is a design question, not only a plan detail.
 16. Sections 6.12, 5.2, and 5.7 changed after the last review round, because the round cap was reached.
     No attacker reviewed these changes.
-17. Verify how each coding agent enables and pins a plugin from project settings.
-    Claude Code and VS Code Copilot support project settings for plugins.
-    For Copilot CLI, pinning from the repo is not verified.
-    Also verify how `k-work` reads the installed superpowers version in each coding agent.
-18. Verify which copy wins in Copilot CLI, Codex, OpenCode, and Pi when a user-level skill and a project skill have the same name.
+17. Resolved 2026-10-27 (plan 0): Claude Code and Copilot CLI enable a plugin from project settings, and each person installs it once with trust.
+    Claude Code records the version in `installed_plugins.json`, and Copilot CLI records it in `config.json`.
+    When a file holds several records, the first one wins, so `k-work` reports a conflict.
+    VS Code Copilot is still unverified.
+18. Verify which copy wins in Codex, OpenCode, and Pi when a user-level skill and a project skill have the same name.
+    In Copilot CLI the project copy wins (plan 0, 2026-10-27).
 19. Verify that committed skill symlinks work on Windows, or commit copies instead.
 20. Section 3.6 changed after the last review round. No attacker reviewed it.
 
