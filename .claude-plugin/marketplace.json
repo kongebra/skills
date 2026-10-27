@@ -1,0 +1,23 @@
+{
+  "name": "kongebra-skills",
+  "owner": {
+    "name": "Svein Are Danielsen"
+  },
+  "metadata": {
+    "description": "Team plugin catalog. Pins upstream plugins to tested commits.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "superpowers",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/obra/superpowers.git",
+        "sha": "2ce8aa15d05bd57213e6f746f953aafb7ded7a8b"
+      },
+      "description": "obra/superpowers, pinned to 7.0.1",
+      "version": "7.0.1",
+      "strict": true
+    }
+  ]
+}
