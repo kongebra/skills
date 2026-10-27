@@ -1,0 +1,15 @@
+## Work tracking
+- Board: <board> (CLI: `<board-cli>`)
+- Code host: <code-host> (CLI: `<code-host-cli>`)
+- Findings go to: <findings-target>, visibility: <visibility>
+- Link work items in PRs as: `<link-format>`
+- Branch names: `<branch-pattern>`
+- Protected paths: <protected-globs>
+- Invariant: `<invariant-glob-1>`: "<invariant-text-1>"
+- Invariant: `<invariant-glob-2>`: "<invariant-text-2>"
+- Risk thresholds: medium_lines=<medium-lines>, medium_owner_teams=<medium-owner-teams>, high_lines=<high-lines>
+- Review limits: spec_rounds=<spec-rounds>, code_rounds=<code-rounds>, spec_attackers_low=<spec-attackers-low>, spec_attackers_medium=<spec-attackers-medium>, spec_attackers_high=<spec-attackers-high>
+- Subagent budget: <subagent-budget>
+- Cross-vendor attacker: <cross-vendor>
+- Verification commands: <verification-commands>
+- QA plan: `<qa-plan>`
