@@ -1,6 +1,6 @@
 # skills
 
-This repo holds the team skills for an agentic work flow.
+This repo holds the team skills for an agentic workflow.
 The skills use the `k-` prefix.
 The shared scripts, roles, and templates are in the support skill `skills/k-common`.
 

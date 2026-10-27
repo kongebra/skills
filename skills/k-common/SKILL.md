@@ -6,8 +6,7 @@ disable-model-invocation: true
 
 # k-common
 
-This skill is a support skill.
-It is not a workflow.
+This skill is a support skill, not a workflow.
 Other `k-` skills call the files in this folder.
 Do not run it on its own.
 
