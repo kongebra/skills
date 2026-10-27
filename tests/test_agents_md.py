@@ -197,14 +197,14 @@ def test_hyphenated_key_parses():
 
 
 def test_malformed_values_keep_defaults_and_warn():
-    text = BOARD_AND_HOST + "\n".join([
-        "- Protected paths: none",
-        "- Findings go to: somewhere",
-        "- Link work items in PRs as: AB#1",
-        "- Invariant: src/**: no quotes",
-        "- Cross-vendor attacker: maybe",
-        "- Subagent budget: many",
-    ]) + "\n"
+    text = BOARD_AND_HOST + (
+        "- Protected paths: none\n"
+        "- Findings go to: somewhere\n"
+        "- Link work items in PRs as: AB#1\n"
+        "- Invariant: src/**: no quotes\n"
+        "- Cross-vendor attacker: maybe\n"
+        "- Subagent budget: many\n"
+    )
     wt, warnings = agents_md.parse(text)
     assert wt is not None
     assert warnings == [

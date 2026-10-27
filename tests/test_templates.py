@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 
 from kcommon import agents_md
+
 from tests.test_agents_md import TEMPLATE, golden_object
 
 TEMPLATES = Path(__file__).resolve().parent.parent / "skills" / "k-common" / "templates"

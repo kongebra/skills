@@ -5,9 +5,9 @@ import subprocess
 from pathlib import Path
 
 import pytest
-
 from kcommon import risk_facts
 from kcommon.gitutil import BaseNotFound
+
 from tests.test_agents_md import GOLDEN
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -273,7 +273,65 @@ def test_missing_protected_paths_line_sets_medium(git_repo):
     facts = compute(git_repo, lambda: git_repo.write("src/app.py", "print('b')\n"))
     assert facts.level == "medium"
     assert facts.work_tracking_at_base is True
-    assert facts.level_reasons == ["no protected paths line at base"]
+    assert facts.level_reasons == [
+        "no protected paths line at base",
+        "policy warning: missing key: Protected paths",
+    ]
+    assert facts.policy_warnings == ["missing key: Protected paths"]
+
+
+BAD_THRESHOLDS = GOLDEN.replace(
+    "- Risk thresholds: medium_lines=300, medium_owner_teams=2, high_lines=800",
+    "- Risk thresholds: medium_lines=abc",
+)
+
+
+def test_policy_warning_at_base_is_reported_and_raises_level(repo):
+    assert BAD_THRESHOLDS != GOLDEN
+    repo.write("AGENTS.md", BAD_THRESHOLDS)
+    repo.commit_all("bad thresholds")
+    facts = compute(repo, lambda: repo.write("src/app.py", "print('b')\n"))
+    assert facts.policy_warnings == ["malformed value: Risk thresholds"]
+    assert facts.level == "medium"
+    assert "policy warning: malformed value: Risk thresholds" in facts.level_reasons
+    lines = risk_facts.render(facts).split("\n")
+    assert "- policy_warnings: malformed value: Risk thresholds" in lines
+
+
+def test_policy_warnings_are_none_for_a_clean_policy(repo):
+    facts = compute(repo, small(repo))
+    assert facts.policy_warnings == []
+    assert "- policy_warnings: none" in risk_facts.render(facts).split("\n")
+
+
+def test_policy_warning_is_in_the_hash(repo):
+    repo.write("AGENTS.md", BAD_THRESHOLDS)
+    repo.commit_all("bad thresholds")
+    path, head = head_of(repo, small(repo))
+    facts = risk_facts.compute(path, "main", head)
+    forged = dataclasses.replace(facts, policy_warnings=[])
+    assert risk_facts.render(facts).split("\n")[0] != risk_facts.render(forged).split("\n")[0]
+
+
+def test_verify_accepts_block_with_policy_warning(repo):
+    repo.write("AGENTS.md", BAD_THRESHOLDS)
+    repo.commit_all("bad thresholds")
+    *_, result = verified(repo, small(repo))
+    assert result.ok, result.message
+
+
+def test_verify_rejects_block_with_policy_warning_removed(repo):
+    repo.write("AGENTS.md", BAD_THRESHOLDS)
+    repo.commit_all("bad thresholds")
+    *_, result = verified(
+        repo,
+        small(repo),
+        edit=lambda t, h, p: t.replace(
+            "- policy_warnings: malformed value: Risk thresholds", "- policy_warnings: none"
+        ),
+    )
+    assert not result.ok
+    assert result.message == "facts differ from the recomputed facts"
 
 
 def test_unknown_base_raises_base_not_found(repo):
@@ -285,7 +343,7 @@ def test_unknown_base_raises_base_not_found(repo):
     result = subprocess.run(
         ["uv", "run", "--no-project", "python", str(K_PY), "risk_facts",
          "--base", "no-such-ref", "--head", head],
-        cwd=path, capture_output=True, text=True, env=os.environ.copy(),
+        check=False, cwd=path, capture_output=True, text=True, env=os.environ.copy(),
     )
     assert result.returncode == 2, result.stderr
 
@@ -296,7 +354,7 @@ def test_cli_prints_block(repo):
         ["uv", "run", "--no-project", "python", str(K_PY), "risk_facts",
          "--base", "main", "--head", head, "--previous-level", "medium",
          "--test-count-before", "3", "--test-count-after", "4"],
-        cwd=path, capture_output=True, text=True, env=os.environ.copy(),
+        check=False, cwd=path, capture_output=True, text=True, env=os.environ.copy(),
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.startswith("<!-- risk-facts base=")
@@ -318,7 +376,7 @@ def test_cli_verify_exit_codes(repo, tmp_path):
             ["uv", "run", "--no-project", "python", str(K_PY), "risk_facts",
              "--verify", str(body), "--head-sha", head, "--base-ref", "main",
              "--trusted-previous-level", "low"],
-            cwd=path, capture_output=True, text=True, env=os.environ.copy(),
+            check=False, cwd=path, capture_output=True, text=True, env=os.environ.copy(),
         )
 
     assert run(good).returncode == 0
@@ -405,6 +463,7 @@ def test_verify_edited_visible_field_fails(repo):
         repo, small(repo), edit=lambda t, h, p: t.replace("- lines_changed: 2", "- lines_changed: 0")
     )
     assert not result.ok
+    assert result.message == "facts differ from the recomputed facts"
 
 
 def test_verify_edited_hash_fails(repo):
@@ -412,6 +471,7 @@ def test_verify_edited_hash_fails(repo):
         repo, small(repo), edit=lambda t, h, p: re.sub(r"sha256=\w+", "sha256=" + "0" * 64, t)
     )
     assert not result.ok
+    assert result.message == "hash differs from the recomputed hash"
 
 
 def test_verify_edited_volatile_line_still_passes(repo):
@@ -428,16 +488,18 @@ def test_verify_extra_line_fails(repo):
         repo, small(repo), edit=lambda t, h, p: t.replace("<!-- /risk", "- extra: 1\n<!-- /risk")
     )
     assert not result.ok
+    assert result.message == "facts differ from the recomputed facts"
 
 
 def test_verify_missing_block_fails(repo):
     path, head = head_of(repo, small(repo))
     result = risk_facts.verify(path, "no block here", head, "main", "low")
     assert not result.ok
+    assert result.message == "no risk-facts block"
 
 
 def test_verify_new_commit_fails_with_head_moved(repo):
-    path, head, text, result = verified(repo, small(repo))
+    path, _head, text, result = verified(repo, small(repo))
     assert result.ok
     repo.write("src/app.py", "print('c')\n")
     new_head = repo.commit_all("more")
@@ -499,3 +561,4 @@ def test_verify_unknown_base_ref_fails_closed(repo):
     path, head, text, _ = verified(repo, small(repo))
     result = risk_facts.verify(path, text, head, "no-such-ref", "low")
     assert not result.ok
+    assert result.message == "base not found"

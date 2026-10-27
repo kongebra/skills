@@ -136,9 +136,12 @@ def test_cli_with_dotted_name_fails(env):
     assert run(env)["clis"].status == "fail"
 
 
-def test_ci_check_ignores_agents_md(env, tmp_path):
-    env.repo.git("rm", "-q", ".github/workflows/ci.yml")
-    env.repo.commit_all("drop ci")
+def test_ci_check_ignores_agents_md(tmp_path, git_repo):
+    git_repo.write("AGENTS.md", "## Work tracking\n- CI: runs in GitHub Actions workflows\n")
+    git_repo.commit_all("only agents")
+    listing = git_repo.git("ls-files").split()
+    assert listing == ["AGENTS.md"]
+    env = type("Env", (), {"repo": git_repo, "home": tmp_path / "home", "skills_root": tmp_path})()
     entry = run(env)["ci"]
     assert entry.status == "warn"
     assert "no CI file" in entry.message

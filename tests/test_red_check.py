@@ -1,11 +1,10 @@
 import json
 from pathlib import Path
 
-import pytest
-
 from kcommon import red_check, red_record
 from kcommon.red_check import CheckEntry
 from kcommon.red_record import slug
+
 from tests.red_helpers import PLAN, TEST_FILE, TWO_TESTS, make_repo, pytest_command
 
 WORK = "W-1"

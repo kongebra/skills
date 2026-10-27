@@ -22,7 +22,7 @@ def test_help_exits_zero(module):
     result = subprocess.run(
         ["uv", "run", "--no-project", "python",
          "skills/k-common/scripts/k.py", module, "--help"],
-        cwd=ROOT, capture_output=True, text=True,
+        check=False, cwd=ROOT, capture_output=True, text=True, timeout=60,
     )
     assert result.returncode == 0, result.stderr
 

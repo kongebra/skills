@@ -79,16 +79,28 @@ def lint(text: str, max_words: int = 25) -> list[LintFinding]:
     return sorted(findings, key=lambda f: f.line)
 
 
+_USAGE = "usage: ste_lint <file>...\nPrints one finding per line. Exits 1 on any finding."
+
+
 def main(argv: list[str]) -> int:
-    if any(a in ("-h", "--help") for a in argv) or not argv:
-        print("usage: ste_lint <file>...\nPrints one finding per line. Exits 1 on any finding.")
+    if any(a in ("-h", "--help") for a in argv):
+        print(_USAGE)
         return 0
+    if not argv:
+        print(_USAGE, file=sys.stderr)
+        return 2
     found = False
     for path in argv:
-        with open(path, encoding="utf-8") as handle:
-            for f in lint(handle.read()):
-                found = True
-                print(f"{path}:{f.line}: {f.rule}: {f.text}")
+        try:
+            with open(path, encoding="utf-8") as handle:
+                text = handle.read()
+        except (OSError, UnicodeDecodeError) as exc:
+            reason = exc.strerror if isinstance(exc, OSError) and exc.strerror else exc
+            print(f"ste_lint: cannot read {path}: {reason}", file=sys.stderr)
+            return 2
+        for f in lint(text):
+            found = True
+            print(f"{path}:{f.line}: {f.rule}: {f.text}")
     return 1 if found else 0
 
 

@@ -46,6 +46,7 @@ class RiskFacts:
     head_sha: str
     previous_level: Level
     work_tracking_at_base: bool
+    policy_warnings: list[str]
     protected_paths_changed: list[str]
     dependency_files_changed: list[str]
     migrations_changed: list[str]
@@ -231,7 +232,7 @@ def compute(
         or (c.status == "R" and c.old is not None and _is_test(c.old) and not _is_test(c.path))
     )
 
-    work_tracking, _ = agents_md.load(repo, base_tip)
+    work_tracking, policy_warnings = agents_md.load(repo, base_tip)
     thresholds = work_tracking.thresholds if work_tracking else Thresholds()
     protected = (work_tracking.protected_paths or ()) if work_tracking else ()
     protected_changed = _matching(changes, protected)
@@ -272,6 +273,8 @@ def compute(
         fire("medium", "no work tracking section at base")
     elif work_tracking.protected_paths is None:
         fire("medium", "no protected paths line at base")
+    for warning in policy_warnings:
+        fire("medium", f"policy warning: {warning}")
     if previous_level != "low":
         reasons.append(f"previous level {previous_level}")
 
@@ -283,6 +286,7 @@ def compute(
         head_sha=head_sha,
         previous_level=previous_level,
         work_tracking_at_base=work_tracking is not None,
+        policy_warnings=policy_warnings,
         protected_paths_changed=protected_changed,
         dependency_files_changed=dependency_changed,
         migrations_changed=migrations_changed,

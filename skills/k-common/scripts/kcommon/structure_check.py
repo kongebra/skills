@@ -79,7 +79,7 @@ def parse_plan(plan_text: str) -> list[TaskEntry]:
         if start:
             current = (int(start.group(1)), [])
             blocks.append(current)
-        elif line.startswith("### ") or line.startswith("## "):
+        elif line.startswith(("### ", "## ")):
             current = None
         elif current is not None:
             current[1].append(line)

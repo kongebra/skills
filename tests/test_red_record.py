@@ -4,7 +4,6 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from kcommon import red_record
 from kcommon.red_record import (
     CommandNotFound,
@@ -18,6 +17,7 @@ from kcommon.red_record import (
     extract_block,
     slug,
 )
+
 from tests.red_helpers import TEST_FILE, make_repo, pytest_command, runner_script
 
 FIXTURE_A = """class T(unittest.TestCase):
@@ -217,7 +217,7 @@ def test_extract_block_hash_ignores_crlf_and_trailing_blanks():
     padded = FIXTURE_A.replace("assertEqual(add(1, 1), 2)", "assertEqual(add(1, 1), 2)   ")
     assert block_hash(padded, "test_a") == block_hash(FIXTURE_A, "test_a")
     expected = hashlib.sha256(
-        "    def test_a(self):\n        self.assertEqual(add(1, 1), 2)".encode()
+        b"    def test_a(self):\n        self.assertEqual(add(1, 1), 2)"
     ).hexdigest()
     assert block_hash(FIXTURE_A, "test_a") == expected
 

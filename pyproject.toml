@@ -6,7 +6,7 @@ requires-python = ">=3.11"
 dependencies = ["kcommon"]
 
 [dependency-groups]
-dev = ["pytest"]
+dev = ["pytest", "ruff"]
 
 [tool.uv]
 package = false
@@ -17,3 +17,9 @@ kcommon = { path = "skills/k-common", editable = true }
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+
+[tool.ruff.lint]
+extend-select = ["I"]

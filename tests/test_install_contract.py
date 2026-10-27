@@ -17,7 +17,7 @@ def test_install_contract_copy_install_runs_preflight_help(tmp_path):
     version = lkg["skills_cli"]["version"]
     install = subprocess.run(
         ["npx", "--yes", f"skills@{version}", "add", str(ROOT), "--copy", "-s", "k-common", "-y"],
-        cwd=tmp_path, capture_output=True, text=True, stdin=subprocess.DEVNULL,
+        check=False, cwd=tmp_path, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=300,
     )
     assert install.returncode == 0, install.stdout + install.stderr
     found = list(tmp_path.rglob("k-common/scripts/kcommon/preflight.py"))
@@ -26,7 +26,7 @@ def test_install_contract_copy_install_runs_preflight_help(tmp_path):
     result = subprocess.run(
         ["uv", "run", "--no-project", "python",
          str(k_common / "scripts" / "k.py"), "preflight", "--help"],
-        cwd=tmp_path, capture_output=True, text=True,
+        check=False, cwd=tmp_path, capture_output=True, text=True, timeout=60,
     )
     assert result.returncode == 0, result.stderr
     assert not (k_common / ".venv").exists()

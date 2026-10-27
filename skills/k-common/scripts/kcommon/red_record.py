@@ -20,12 +20,16 @@ import shutil
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Literal
 
 from kcommon import gitutil
-from kcommon.constants import EVIDENCE_HEAD_CHARS, EVIDENCE_TAIL_CHARS, RUN_TIMEOUT_SECONDS
+from kcommon.constants import (
+    EVIDENCE_HEAD_CHARS,
+    EVIDENCE_TAIL_CHARS,
+    RUN_TIMEOUT_SECONDS,
+)
 from kcommon.structure_check import parse_plan
 
 Category = Literal["red", "missing-symbol", "syntax", "no-run"]
@@ -388,7 +392,7 @@ def record(
         output_tail=tail,
         output_truncated=truncated,
         head_at_record=gitutil.rev_parse(repo, "HEAD"),
-        recorded_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        recorded_at=datetime.now(UTC).isoformat(timespec="seconds"),
     )
 
 
